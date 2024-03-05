@@ -17,8 +17,6 @@ data_read <- Read10X(data.dir = paste0("ResolveDataToAnalyze/",folders, "/"  ))
 
 ### read spatial data
 filenames = list.files(pattern = "all.tiff_measurements.csv", recursive = TRUE)
-#filenames = filenames[grepl("Original", filenames)]
-#filenames = filenames[grepl("/Preview", filenames)]
 
 filenames = setdiff( filenames[grepl("[O|o]riginal", filenames)] ,filenames[grepl("[O|o]ld", filenames)])
 
@@ -28,8 +26,6 @@ datalist = lapply(filenames,
                                          stringsAsFactors = FALSE)})
 
 names(datalist) <- c("slide000_Control_A1", "slide000_Control_A2", "slide000_TBI_A1", "slide000_TBI_A2",  "slide011_Control_D2", "slide011_TBI_D1", "slide016_TBI_C1", "slide010_Control_D2", "slide010_TBI_D1")
-
-#names(datalist) <- c("slide000_Control_A1", "slide000_Control_A2", "slide000_TBI_A1", "slide000_TBI_A2")
 
 for(var in names(datalist) ){
  #datalist[[var]][, c("Gene.ID.1", "Gene.ID.2", "X.1", "X.2", "X") ] <- NULL
@@ -98,32 +94,12 @@ for(var in names(seurat_obj_list))
 }
 
 
-
-
-
-
-#data_read <- Read10X(data.dir = "ResolveDataToAnalyze/sc_S5/"  )
-#colnames(data_read) = paste0("sc_Control_S5zz", colnames(data_read))
-
-#datalist[["sc_Control_S5"]] = data_read
-
-#data_read <- Read10X(data.dir = "ResolveDataToAnalyze/sc_S6/"  )
-#colnames(data_read) = paste0("sc_Control_S6zz", colnames(data_read))
-
-#datalist[["sc_Control_S6"]] = data_read
-
-
 commongenes =  Reduce(intersect, lapply(datalist, rownames))
 datalistcommon = datalist
 for(var in names(datalistcommon) ){
     datalistcommon[[var]] = datalistcommon[[var]][commongenes,]
 }
 
-
-
-#spatialdata = Reduce(function(x,y) {merge(x, y, all = TRUE)}, datalist)
-
-#folders = paste0("ResolveDataToAnalyze/", sampleslide, "/*measurements.csv")
 
 ###### integration
 
@@ -132,31 +108,7 @@ for(var in names(datalistcommon)[2:length(names(datalistcommon))] ){
     data_read = cbind( data_read, datalistcommon[[var]])
 }
 
-###selection
-#selectedSections = names(datalistcommon)[c(1, 6, 9)]
-#selectedSections = names(datalistcommon)[c(1:4)]
 
-#selectedSections = names(datalistcommon)[c(1:5,9)]
-
-#data_read = datalistcommon [[selectedSections[1]]]
-#for(var in selectedSections[2:length(selectedSections)] ){
-#    data_read = cbind( data_read, datalistcommon[[var]])
-#}
-### end of the selection
-
-#l=length(colnames(data_read))
-
-
-#data_sep <- CreateSeuratObject(counts = data_read)
-#data_sep@meta.data$orig.ident = unlist(strsplit(colnames(data_read), "zz"))[seq(1,l*2,2)]
-#l=length(colnames(data_sep))
-
-#data_sep@meta.data$slide = unlist(strsplit(colnames(data_read), "_"))[seq(1,l*3,3)]
-#data_sep@meta.data$condition = unlist(strsplit(colnames(data_read), "_"))[seq(2,l*3,3)]
-#data_sep@meta.data$section = unlist(strsplit(colnames(data_read), "_"))[seq(3,l*3,3)]
-
-### old way works better
-## data_read = data_read[, setdiff(colnames(data_read), "slide000_Control_A2zzPathCellObject.1604")]
 objSpatial <- CreateSeuratObject(data_read, min.cells = 10, min.features = 2)
 l=length(colnames(objSpatial))
 
@@ -183,7 +135,7 @@ seurat_obj_list$slide000_Control_A2 = seurat_obj_list$slide000_Control_A2[, setd
 AstroNeurontestdata <- as.data.frame(AstroNeurontest@assays$RNA@counts)[intersect(rownames(AstroNeurontest), commongenes),]
 obj10x <- CreateSeuratObject(AstroNeurontestdata, min.cells = 100, min.features = 1)
 
-source("~/Dropbox/araks/codeperproject/SeuratRun.R")
+source("SeuratRun.R")
 
 mergeclusters <-SeuratV3MergeSpatial( obj10x@assays$RNA@counts, objSpatial@assays$RNA@counts,  "10x", "Genexyz", number.cc = 10, dimensions.align = 10)
 DimPlot(mergeclusters, group.by = "sample")
@@ -196,7 +148,6 @@ DimPlot(mergeclusters, group.by = "previousID", label = TRUE)
 DimPlot(mergeclusters, group.by = "previousID", split.by = "sample", label=TRUE)
 
 ###subsetdata
-#objSpatial1 = SubsetData(objSpatial, cells = intersect( colnames(objSpatial), WhichCells(mergeclusters, idents = setdiff(c(1:12), c(0,1,2,8) ) )))
 objSpatial1 = SubsetData(objSpatial, cells = intersect( colnames(objSpatial), WhichCells(mergeclusters, idents = setdiff(c(0:11), c(0,1,7,11,5) ) )))
 
 ## re-integrate
@@ -225,11 +176,6 @@ DimPlot(mergeclusters, label= TRUE)+geom_vline(xintercept = -2)+geom_vline(xinte
 
 
 DefaultAssay(mergeclusters) <- "integrated"
-#Astro <- SubsetData(mergeclusters, ident.use =  c(3,15,18,7,6,1,20,21,9,12))
-#Neuro<- SubsetData(mergeclusters, ident.use =  c( 3,15,19,14,13,10,8,4,5,11))
-
-#Astro <- SubsetData(mergeclusters, ident.use =  c(10,7,6,0,9,8))
-#Neuro<- SubsetData(mergeclusters, ident.use =  c( 10,7,2,3,5,4,11))
 
 Astro <- SubsetData(mergeclusters, ident.use =  c(4,5,6,1,8))
 Neuro<- SubsetData(mergeclusters, ident.use =  c( 4,3,2,7))
@@ -291,7 +237,6 @@ for(var in names(seurat_obj_list))
   obj@meta.data$Neuro_lineage_discrete = mergeclusters@meta.data[colnames(obj),]$Neuro_lineage_discrete
   obj@meta.data$AstroLineage = mergeclusters@meta.data[colnames(obj),]$AstroLineage
   obj@meta.data$NeuroLineage = mergeclusters@meta.data[colnames(obj),]$NeuroLineage
-#  obj@meta.data[is.na(obj@meta.data)] <- 0
   seurat_obj_list[[var]] <- obj
 }
 
@@ -473,233 +418,3 @@ for(var in names(seurat_obj_list))
 }
 
 FeaturePlot(seurat_obj_list$slide000_Control_A2, c("Pseudotime_1", "Pseudotime_2", "Pseudotime_3", "Pseudotime_4", "Pseudotime_5"), reduction = "coord" , cols = c("yellow", "red") , pt.size = 1.8)
-
-pdf("hist_nFeature_RNA.pdf")
-hist(data_sep@meta.data$nFeature_RNA)
-dev.off()
-
-pdf("hist_percent.mt.pdf")
-hist(data_sep@meta.data$percent.mt)
-dev.off()
-
-
-## Set lower threshold quite low because of low seq depth:
-data_sep <- subset(data_sep, subset = nFeature_RNA > 0 & nFeature_RNA < 6000)
-dim(data_sep)
-## [1] 33537 110314
-
-
-## Split object by sample:
-data_list = SplitObject(data_sep, split.by = "orig.ident")
-
-## Run sctransform for each sample:
-for(i in names(data_list))
-{
-  cat("Sample ", i, "....\n")
-  data_list[[i]] <- SCTransform(data_list[[i]], 
-                                verbose = FALSE)
-}
-
-## Select features for downstream integration, and run PrepSCTIntegration, which ensures that all necessary Pearson residuals have been calculated:
-data_features <- SelectIntegrationFeatures(object.list = data_list, 
-                                           nfeatures = 500)
-data_features = setdiff(data_features, c("Pcdha11", "Pcdhgb2", "Pcdhga4", "Pcdha2", "Serpina3n") )
-
-
-data_list <- PrepSCTIntegration(object.list = data_list, 
-                                anchor.features = data_features)
-## Run PCA so I can run the FindIntegrationAchors with reduction = "rpca":
-data_list <- lapply(X = data_list, FUN = RunPCA, verbose = FALSE, features = data_features)
-## Identify anchors and integrate the datasets:
-## Find integration vectors:
-data_anchors <- FindIntegrationAnchors(object.list = data_list, 
-                                       normalization.method = "SCT", 
-                                       reduction = "cca", ## normally this would be "cca", but it's recommended to switch to reciprocal pca for very big datasets. But to run "rpca" I need to run PCA beforehand (see above).
-                                       anchor.features = data_features,
-                                       reference = 1) ## chose which dataset should be reference for integration (that speeds up the integration, also not doing it gives me an error (see below)
-## If I don't set a reference dataset, I get this error:
-#Error in validityMethod(as(object, superClass)) :
-#  long vectors not supported yet: ../../src/include/Rinlinedfuns.h:522 "")
-
-## On default, all non-anchor genes are being thrown away during data integration. 
-## Create list of common genes to keep:
-genes_to_integrate = Reduce(intersect, lapply(data_list, function(x) rownames(x@assays$SCT@scale.data)))
-length(genes_to_integrate)
-
-#genes_to_integrate  = c("Ascl1","Aurkb", "Ube2c","Neurog2", "Frzb", "Lpar1", "Eomes", "Fabp7", "Aldoc", "Fgfr3", "Ogt", "Fam107a", "Hapln1", "Neat1", "Sparc", "Sned1", "Sox4", "Neurod1", "Calb2", "Snap25", "Unc5d", "Vim", "Mpped1", "Nell2", "Kitl", "Pcp4","Ogt", "Syt1")
-
-
-## 6000
-## save workspace in case integratedata doesn't work:
-save.image(file = "seurat_preprocess_image.RData")
-
-## This step takes a lot of memory if done on all genes:
-## For some reason with Seurat v.3.1.1 it doesn't work anymore on genes_to_integrate. Figure this out. For now I remove it.
-data <- IntegrateData(anchorset = data_anchors, 
-                      normalization.method = "SCT",
-                      features.to.integrate = genes_to_integrate)
-## Warning: Adding a command log without an assay associated with it
-
-## Proceed with downstream analysis:
-data <- RunPCA(data)
-## Run UMAP on first couple PCs:
-
-data <- JackStraw(data, num.replicate = 100)
-data <- ScoreJackStraw(data, dims = 1:40)
-ElbowPlot(data)
-
-data <- RunUMAP(data, dims = 1:15) ## for full study also try dims = 1:30 (that's being used in the more recent vignettes)
-# data = RunTSNE(data)
-
-
-## Cluster the cells based on PCs:
-data = FindNeighbors(data, dims = 1:15)
-data = FindClusters(data, resolution = 0.6)
-
-DimPlot(data, pt.size = 1.0, label.size = 5, label = TRUE)
-DefaultAssay(data) = "SCT"
-FeaturePlot(data, c("Aldoc", "Ascl1", "Neurod1", "Snap25"))
-
-metadata =  data@meta.data
-tablecounts = table(metadata$slide, metadata$seurat_clusters)
-
-barplot(tablecounts,
-        main = "representation in each category",
-        xlab = "Class",
-        col = c("red2","green2", "blue2", "orange", "green4")
-)
-legend("topright",
-       rownames(tablecounts),
-       fill = c("red2","green2", "blue2", "orange", "green4")
-)
-save(data, file = "seurat_data.RData")
-
-pdf("umap.pdf",
-    width = 7.5, 
-    height = 6.5)
-DimPlot(object = data, 
-               reduction = "umap",
-               label = FALSE)
-dev.off()
-
-pdf("umap_cluster.pdf",
-    width = 10, 
-    height = 7)
-DimPlot(object = data, 
-        reduction = "umap",
-        label = TRUE)
-dev.off()
-
-
-pdf("umap_sample.pdf",
-    width = 7.5, 
-    height = 6.5)
-DimPlot(object = data, 
-        group.by = "orig.ident",
-        reduction = "umap",
-        label = FALSE)
-
-dev.off()
-
-pdf("umap_nFeature_RNA.pdf",
-    width = 7.5, 
-    height = 6.5)
-FeaturePlot(object = data, 
-        reduction = "umap",
-        features = "nFeature_RNA")
-dev.off()
-
-pdf("umap_nCount_RNA.pdf",
-    width = 7.5, 
-    height = 6.5)
-FeaturePlot(object = data, 
-            reduction = "umap",
-            features = "nCount_RNA")
-dev.off()
-
-
-data@assays$RNA@counts["Prox1", ] = 0
-
-for(var in names(data_list) ) {
-    data@assays$RNA@counts["Prox1",intersect(colnames(data@assays$RNA@counts), colnames(datalist[[var]] ))] = as.numeric(datalist[[var]]["Prox1", intersect(colnames(data@assays$RNA@counts), colnames(datalist[[var]]))] )
-
-}
-
-#data@assays$RNA@counts["Prox1",intersect(colnames(data@assays$RNA@counts), colnames(datalist$sc_Control_S6))] = as.numeric(datalist$sc_Control_S6["Prox1", intersect(colnames(data@assays$RNA@counts), colnames(datalist$sc_Control_S6))] )
-
-#data@meta.data[intersect(rownames(data@meta.data), colnames(datalist$sc_Control_S5)),]$Prox1   = as.numeric(datalist$sc_Control_S5["Prox1", intersect(rownames(data@meta.data), colnames(datalist$sc_Control_S5))] )
-
-
-prox1 = data@assays$RNA@counts["Prox1",] >5
-cellsProx1 = names(prox1[which(prox1)])
-DimPlot(data, cells = setdiff( colnames(data), cellsProx1), label = TRUE)
-
-ll = length(unique(data@active.ident)) - 1
-nspc = subset( data, cells = WhichCells(data, idents = setdiff(c(0:ll), c(0) )))
-DefaultAssay(nspc) = "SCT"
-VariableFeatures(nspc) =  genes_to_integrate
-nspc <- RunPCA(nspc)
-nspc <- JackStraw(nspc, num.replicate = 100)
-nspc <- ScoreJackStraw(nspc, dims = 1:20)
-ElbowPlot(nspc)
-nspc <- RunUMAP(nspc, dims = 1:20)
-nspc <- FindNeighbors(nspc, dims = 1:20)
-nspc <- FindClusters(nspc, resolution = 0.6)
-DimPlot(nspc, label = TRUE, label.size = 5, pt.size = 0.8)
-DimPlot(nspc,  label.size = 5, group.by = "slide")
-
-FeaturePlot(nspc, c("Aldoc", "Ascl1", "Neurod1", "Snap25"))
-
-metadata =  data@meta.data
-table(metadata$slide, metadata$seurat_clusters)
-
-
-
-nspc2 = subset( nspc, cells = WhichCells(nspc, idents = setdiff(c(1:29), c(2,14, 29, 27, 25, 10, 4, 24) )))
-nspc2 = subset( nspc2, features = rownames(nspc)[rownames(nspc) != "Prox1" ]  )
-
-nspc2 <- RunPCA(nspc2)
-nspc2 <- RunUMAP(nspc2, dims = 1:10)
-nspc2 = FindNeighbors(nspc2, dims = 1:10)
-nspc2 = FindClusters(nspc2, resolution = 0.6)
-DimPlot(nspc2,  label = TRUE, label.size = 5)
-DimPlot(nspc2,  label.size = 5, group.by = "slide")
-FeaturePlot(nspc2, c("Aldoc", "Ascl1", "Neurod1", "Snap25"))
-
-
-nspc3 = subset( nspc2, cells = WhichCells(nspc, idents = setdiff(c(1:16), c(2,14, 29, 27, 25, 10, 4, 24) )))
-nspc3 = subset( nspc, features = rownames(nspc)[rownames(nspc) != "Prox1" ]  )
-
-nspc2 <- RunPCA(nspc2)
-nspc2 <- RunUMAP(nspc2, dims = 1:10)
-nspc2 = FindNeighbors(nspc2, dims = 1:10)
-nspc2 = FindClusters(nspc2, resolution = 0.6)
-DimPlot(nspc2,  label = TRUE, label.size = 5)
-FeaturePlot(nspc2, c("Aldoc", "Ascl1", "Neurod1"))
-
-
-
-
-### Average comparisons
-AllSpatialAverage = Reduce(rbind, lapply(datalist, rowMeans))
-rownames(AllSpatialAverage) =names(datalist)
-AllSpatialAverage = as.data.frame(AllSpatialAverage)
-AllSpatialAverage = t.data.frame(AllSpatialAverage)
-AllSpatialAverage = as.data.frame(AllSpatialAverage)
-
-## c(1,2,5,7) c(3,4,6,8,9))
-par(mfrow=c(4, 4))
-for(var in names(datalist) [c(3,4,6,8,9)]){
-    for(var2 in names(datalist) [c(3,4,6,8,9)] ){
-            # Creating the plot
-            y = AllSpatialAverage[[var]]
-            x = AllSpatialAverage[[var2]]
-            plot(x, y, pch = 19, col = "lightblue3", xlab=var, ylab=var2) + abline(a = 0, b = 1, col = "blue", lwd = 1, xlab="", ylab="")+abline(lm(y ~ x), col = "red", lwd = 1) + title(paste("Correlation:", round(cor(x, y), 2)))
-    }
-}
-
-
-
-obj@meta.data$slide = unlist(strsplit(colnames(AllSpatialAverage), "_"))[seq(1,27,3)]
-obj@meta.data$condition = unlist(strsplit(colnames(AllSpatialAverage), "_"))[seq(2,27,3)]
-obj@meta.data$section = unlist(strsplit(colnames(AllSpatialAverage), "_"))[seq(3,27,3)]
