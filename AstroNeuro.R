@@ -1,11 +1,10 @@
 load("~/Documents/Pascal/test.RData")
-source("~//SeuratRun.R")
+source("SeuratRun.R")
 
 Combinedtest <- SeuratV3Merge(S5[rownames(S5)[rownames(S5) != "Malat1"],], S6[rownames(S6)[rownames(S6) != "Malat1"],], "S5", "S6",  number.cc = 20, dimensions.align = 20, npcs.n = 30, res = 2)
 ucols <- c("coral", "goldenrod1", "yellowgreen", "seagreen3", "darkolivegreen3", "darkolivegreen4", "mediumseagreen", "lightskyblue2", "lightskyblue3", "skyblue4", "lightslateblue", "turquoise4", "khaki3", "palevioletred", "tan", "tan3", "orange2")
 
 
-Combinedtest <- CombinedtestV4
 Combinedtest <- SetIdent( Combinedtest, WhichCells(object = Combinedtest, idents = c(10,9,8,4)), value = "Oligo" )
 Combinedtest <- SetIdent( Combinedtest, WhichCells(object = Combinedtest, idents = c(0,16)), value = "Endo" )
 Combinedtest <- SetIdent( Combinedtest, WhichCells(object = Combinedtest, idents = c(20)), value = "Mgl1" )
@@ -41,7 +40,7 @@ panel.border = element_rect(colour = "black", fill=NA, size=1, linetype="solid")
 Combinedtest@meta.data [which(Combinedtest@meta.data$sample == "S6"),]$sample <- "TBI"
 Combinedtest@meta.data [which(Combinedtest@meta.data$sample == "S5"),]$sample <- "Sham"
 Combinedtest@meta.data <- na.omit(Combinedtest@meta.data)
-source("~/Documents/AstrocyteDevelopment/SeuratRun.R")
+source("SeuratRun.R")
 plotOriginSampleBarplots(Combinedtest)
 
 testAllMarkers <- FindAllMarkers(Combinedtest, only.pos = TRUE, min.pct = 0.25, thresh.use = 0.25)
@@ -72,7 +71,7 @@ cells <- WhichCells(Combinedtest, idents = levels(Combinedtest)[ ! (levels(Combi
 S5namesAtest <- intersect(cells, paste0(colnames(S5), "_1") )
 S6namesAtest <- intersect(cells, paste0(colnames(S6), "_2") )
 
-source("~/Documents/AstrocyteDevelopment/SeuratRun.R")
+source("SeuratRun.R")
 set.seed(700)
 S5cutAtest <- S5 [ rownames(S5)[rownames(S5) != "Malat1" ], matrix(unlist(strsplit(S5namesAtest, "_")), ncol = 2, byrow=TRUE)[, 1] ]
 S6cutAtest <- S6 [ rownames(S5)[rownames(S5) != "Malat1" ], matrix(unlist(strsplit(S6namesAtest, "_")), ncol = 2, byrow=TRUE)[, 1] ]
@@ -282,7 +281,7 @@ AstroNeurontest <- SCTransform(AstroNeurontest, vars.to.regress = "percent.mt", 
 
 ##### DE genes AstroNeuro
 
-source("~/Documents/AstrocyteDevelopment/SeuratRun.R")
+source("SeuratRun.R")
 
 obj <- AstroNeurontest
 
@@ -323,31 +322,6 @@ for(var in levels(obj@active.ident)[-1] ){
   rm(tmp)
 }
 
-
-
-
-
-###### with Logistic regression LR
-source("~/Documents/AstrocyteDevelopment/SeuratRun.R")
-
-DefaultAssay(AstroNeurontest) <- "SCT"
-obj = AstroNeurontest
-i=1
-tmp <- findTBIgenes(obj, levels(obj@active.ident)[1] )
-
-tmp$gene <- rownames(tmp)
-diseasedgenesbyLR <- cbind( tmp , cluster = i-0.25+sample(1:10, dim(tmp)[1], replace=T)/20 )
-i = 2
-for(var in levels(obj@active.ident)[-1] ){
-  tmp <- findTBIgenes(obj, var)
-  tmp$gene <- rownames(tmp)
-  diseasedgenesbyLR <- rbind(diseasedgenesbyLR,  cbind(tmp, cluster = i-0.25+sample(1:10, dim(tmp)[1], replace=T)/20 ) )
-  i = i+1
-  rm(tmp)
-}
-
-
-diseasedgenes = diseasedgenesbyLR
 
 diseasedgenes$cl <- round(diseasedgenes$cluster)
 #diseasedgenes$gene <- rownames(diseasedgenes)
